@@ -1,0 +1,292 @@
+metadata:
+  title: CCPA App
+  short title: CCPA App
+  comment: Test for an App to help CA residents control their data.
+---
+objects:
+  - client: Individual
+---
+mandatory: True
+code: |
+  intro_screen_continue
+  if client_CA_resident:
+    CA_info_presented
+  else: 
+    not_CA_final_screen
+  client_issue_yes
+  if client_issue_yes:
+    company_name_complaint
+  else: 
+    no_issue_final_screen
+  find_contact_information
+  client.name.first
+  client.todays_date
+  client.phone_number
+  email_address
+  if data_ask['knowledge']:
+    downloaded_right_to_know
+  if data_ask['opting']:
+    downloaded_opt_out
+  if data_ask['deletion']:
+    downloaded_right_to_delete
+  if user_has_another_complaint == 'Yes':
+    client_issue_yes
+---
+id: What is the name of the user?
+question: |
+  What is your name?
+subquestion: |
+  *This information will be used to generate the text for your request and will not be used for any other purpose*
+fields:
+  - First Name: client.name.first
+  - Middle Name: client.name.middle
+    required: False
+  - Last Name: client.name.last
+  - Suffix: client.name.suffix
+    required: False
+---
+id: introductory screen
+question: |
+  California Consumer Protection Act complaint form
+subquestion: |
+  Welcome to the CCPA Assistance complaint form. 
+  
+  The CCPA gives California residents important rights regarding the personal information that businesses collect about them. This form explains who and what is covered by the CCPA, describes how you can exercise your rights, and provides auto-generated text for you to make a formal complaint with.
+  
+  ${ collapse_template(why_user_cares) }
+continue button field: intro_screen_continue
+---
+template: why_user_cares
+subject: |
+  Why Should You Care?
+content: |
+  Today, it's a standard practice for businesses to use your personal information for many different purposes. A lot of information about you and your household can be collected with or without your knowledge, which can be used by individual businesses, shared with related companies, and made available to others. Information that is gathered about you is combined and analyzed to create profiles of your preferences, behavior, attitudes, abilities and other characteristics. Exercising your rights to limit the data businesses can use, store, and share  can help protect you from unwanted, unfair, or harmful uses of your personal information. 
+action buttons: 
+  - label: Learn More
+    action: https://www.consumer-action.org/downloads/english/CCPA-Privacy-Rights_2022.pdf
+    color: success
+    icon: sign-out-alt
+    new window: True
+---
+id: Does the user reside in California?
+question: |
+  Do you live in California?
+fields:
+  - no label: client_CA_resident
+    datatype: yesnoradio
+---
+id: information for California resident regarding data control.
+event: CA_rights_and_info
+question: |
+  As a California resident, you have the right to:
+subquestion: |
+  - **Know** the types of personal information a business collects and what it may do with it,       and about Californians’ CCPA rights as well as **see** the specific pieces of personal           information a business has collected about you.
+  - **Delete** (some of) the personal information a business has collected about you.
+  - **Opt-out of the sale** of your personal information.
+  
+  Some of the rights the CCPA grants are automatic, while others require you to take steps to     exercise them. 
+  ${ collapse_template(ccpa_for_instance) }
+continue button field: CA_info_presented
+---
+template: ccpa_for_instance
+subject: |
+  For example
+content: |
+  For example, California citizens have the right not to be discriminated against by a business for exercising their CCPA rights. In contrast, California residents must actively notify businesses when they want to know, delete, or opt-out of the sale of their personal     information. The CCPA also allows California residents to sue a business if it fails to implement reasonable security measures when their personal information is compromised in a data breach.
+---
+id: determing if there is a business that the user wants to exercise their CCPA rights against.
+question: |
+  Is there a business that you would like to exercise your CCPA rights against?
+subquestion: |
+  **For Example**: if you would like a business to reveal the personal information it has gathered about you, you have the right to request that information from them and know what they have collected.
+fields:
+  - no label: client_issue_yes
+    datatype: yesnoradio
+---
+id: determing the business that the user wants to exercise their CCPA rights against.
+question: |
+  What is the name of the business you would like to exercise your CCPA rights against?
+fields:
+  - Company Name: company_name_complaint
+---
+comment: |
+  id: does the business qualify as a business for the purposes of the CCPA?
+  question: |
+  If you can, please check each box that applies to ${ company_name_complaint }.
+  fields:
+  Does ${ company_name_complaint }: business_ask
+  datatype: checkboxes
+  choices:
+    - Have annual gross revenue in excess of $25M?: gross_revenue
+    - Buy, receive or sell the personal information of 50,000 or more California residents per       year: receive_or_sell
+    - Make at least half of their annual revenue from selling California residents’ personal         information: half_annual_revenue
+  
+---
+id: determining the rights that the user would like to excericse against business.
+question:
+  "Select what you would like to do"
+fields:
+  Please select what you would like to do: data_ask
+  datatype: checkboxes
+  choices:
+    - I want to know what personal information business collected about me: knowledge
+    - I want to opt-out of the sale of my personal information from business: opting
+    - I want business to delete my personal data: deletion
+---
+id: informational/instruction page to find emaila address or online form for business complaint
+question: |
+  Find the contact page or email address for data complaints.
+subquestion: |
+  *This information will be used to generate the text for your request and will not be used for any other purpose*
+continue button field: find_contact_information
+---
+id: what is the date
+question: |
+  What is today's date?
+subquestion: |
+  *This information will be used to generate the text for your request and will not be used for any other purpose*
+fields:
+  - Date: client.todays_date
+    datatype: date
+---
+id: what is the users phone number
+question: |
+  What is your phone number?
+subquestion: |
+  *This information will be used to generate the text for your request and will not be used for any other purpose*
+  
+  **Example**: (123)-444-5566
+fields:
+  - Phone Number: client.phone_number
+---
+id: what is the users email address
+question: |
+  What is your email address?
+subquestion: |
+  *This information will be used to generate the text for your request and will not be used for any other purpose*
+fields:
+  - Email Address: email_address
+---
+id: document for right to know template
+event: event_right_to_know
+question: |
+  Here is your document, ${ client.name.first }.
+subquestion: |
+  With the text generate below, copy and paste it into a business's online complaint page or send it directly to the business's customer support email address.
+attachments:
+  - name: Right To Know Sample Form
+    filename: rtk_form
+    content: |
+      Dear Privacy Compliance Officer,
+      
+      My name is ${ client }. I reside in California and am exercising my data access right           under the California Consumer Privacy Act to see a copy of the categories and the               specific pieces of personal information that ${ company_name_complaint } has collected           about me.
+      
+      I request to see a copy of any and all of the records you have pertaining to me                 including but not limited to:
+        (1) Specific pieces of personal information that you have collected about me including               all information or content provided or posted by me, any information you have                   collected about me, or any personal information you have obtained or acquired about             me from a third party business or service provider;
+        (2) Any inferences you have made about me;
+        (3) Categories of personal information you have collected about me pursuant to the                   enumerated list of categories in 1798.140(o);
+        (4) Categories of sources from which my personal information is collected;
+        (5) Categories of personal information that you have sold or disclosed for a business               purpose about me by each category of personal information enumerated in 1798.140(o);
+        (6) Categories of third parties to whom my personal information was sold or disclosed               for a business purpose; and 
+        (7) The business or commercial purpose for collecting or selling my personal                         information.
+
+       My email address is ${ email_address } and my phone number is ${ client.phone_number }.          If you need any more information from me, please let me know as soon as possible. If            you cannot comply with my request–either in whole or in part–please state the reason            why you cannot comply. If my request is incomplete, please provide me with specific              instructions on how to complete my request.
+
+       Sincerely,
+       
+       ${ client }
+        
+continue button field: downloaded_right_to_know
+---
+id: document for opt-out template
+question: |
+  Here is your document, ${ client.name.first }.
+subquestion: |
+    With the text generate below, copy and paste it into a business's online complaint page or send it directly to the business's customer support email address.
+attachments:
+  - name: Opt-Out Sample Form
+    filename: oo_form
+    content: |
+       Dear Privacy Compliance Officer,
+
+       My name is ${ client }. I reside in California and am exercising my right to opt-out            of the sale of my personal information under the California Consumer Privacy Act. I              request to opt-out of the future sale of my personal information by ${ company_name_complaint } to third parties.
+          
+        My email address is ${ email_address } and my phone number is ${ client.phone_number }.         If you need any more information from me, please let me know as soon as possible. If you         cannot comply with my request–either in whole or in part–please state the reason why you         cannot comply. If part of my information is subject to an exception, please cease from           selling any information that is not subject to such exception. If my request is                 incomplete, please provide me with specific instructions on how to complete my request.
+
+        Sincerely,
+        
+        ${ client }
+       
+continue button field: downloaded_opt_out
+---
+id: document for right to delete template
+question: |
+  Here is your document, ${ client.name.first }.
+subquestion: |
+    With the text generate below, copy and paste it into a business's online complaint page or send it directly to the business's customer support email address.
+attachments:
+  - name: Right to Delete Sample Form
+    filename: rtd_form
+    content: |
+      Dear Privacy Compliance Officer,
+
+      My name is ${ client }. I reside in California and am exercising my right to delete my           personal information under the California Consumer Privacy Act. I request that ${               company_name_complaint } deletes all of the information it has collected about me, whether       directly from me, through a third party, or through a service provider.
+          
+      My email address is ${ email_address } and my phone number is ${ client.phone_number }. If       you need any more information from me, please let me know as soon as possible. If you           cannot comply with my request–either in whole or in part–please state the reason why you         cannot comply. If part of my information is subject to an exception, please delete all           information that is not subject to an exception. If my request is incomplete, please             provide me with specific instructions on how to complete my request.
+
+      Sincerely,
+      
+      ${ client }
+        
+continue button field: downloaded_right_to_delete
+---
+mandatory: True
+id: asking the user if there is another business they would like to asser their CCPA rights against
+event: user_has_another_complaint
+question: Is there another business you would like to assert your CCPA rights against?
+action buttons:
+  - label: I Have Another Issue
+    action: client_issue_yes
+    color: success
+  - label: I Am All Set
+    action: https://docassemble.org
+    color: danger
+  - label: Learn More
+    action: https://www.consumer-action.org/downloads/english/CCPA-Privacy-Rights_2022.pdf
+    color: link
+    icon: sign-out-alt
+    new window: True
+---
+event: not_CA_final_screen
+question: |
+  Thank You
+subquestion: |
+  Although you are not a California resident, your state may have its own Data Privacy protection.
+back button: True
+back button label: |
+  Actually, I am from California
+action buttons:
+  - label: Check State Data Privacy Protections
+    action: https://www.ncsl.org/research/telecommunications-and-information-technology/state-laws-related-to-internet-privacy.aspx#:~:text=Three%20states%E2%80%94California%2C%20Colorado%20and,of%20personal%20information%2C%20among%20others.
+    color: success
+    icon: sign-out-alt
+    new window: True
+  - label: I Am All Set
+    action: https://docassemble.org
+    color: warning
+---
+event: no_issue_final_screen
+question: Remember, as a California resident you have the right to control your personal information.
+back button: True
+back button label: |
+  Actually, I do have an issue
+action buttons:
+  - label: Exit
+    action: https://docassemble.org
+    color: warning
+---
+modules:
+  - docassemble.ALToolbox.misc
+---
+features:
+  css: docassemble.ALToolbox:collapse_template.css
